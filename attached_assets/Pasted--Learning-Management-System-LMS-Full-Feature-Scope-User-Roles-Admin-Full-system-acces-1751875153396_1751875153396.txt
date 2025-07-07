@@ -1,0 +1,186 @@
+🧠 Learning Management System (LMS) – Full Feature Scope
+🔐 User Roles
+
+    Admin: Full system access
+
+    Lecturer: Manage assessments and students’ grades
+
+    Student: Enroll, drop courses, view results, take quizzes
+
+    Guest/Visitor: View public news and events
+
+📊 Admin Dashboard
+
+    Restricted to admins only
+
+    View school-wide demographics:
+
+        Total students, lecturers, courses
+
+        Active vs inactive users
+
+        Enrollments per semester
+
+    Analytics:
+
+        Pass/fail rates
+
+        Average grades by department/semester
+
+        Course engagement stats
+
+📢 News & Events (Public)
+
+    All users can access
+
+    Managed by Admin
+
+    Can include:
+
+        Announcements
+
+        Calendar events
+
+        Live updates
+
+👥 Admin Management Functions
+
+    Students
+
+        Add, Edit, Delete, Search
+
+        Assign to departments
+
+        View course registrations, grades
+
+    Lecturers
+
+        Add, Edit, Delete, Search
+
+        Assign to courses
+
+📚 Course Management
+
+    Students can add/drop courses
+
+    Admin/lecturer manages course metadata
+
+    Each course includes:
+
+        Uploads: Video lectures, PDFs, Docs
+
+        Semester/year assignment
+
+🧮 Lecturer Assessment Input
+
+    Input scores for:
+
+        Attendance
+
+        Mid exam
+
+        Final exam
+
+        Assignment
+
+    Score breakdown is customizable
+
+🧠 Automated Calculations
+
+    Automatically compute:
+
+        Total score
+
+        Average
+
+        Grade (A-F or numeric scale)
+
+        Grade comment: Pass, Fail, Pass with warning
+
+📈 Student-Facing Features
+
+    Assessment Results Page
+
+        Breakdown by assessment type
+
+    Grade Results Page
+
+        Final results grouped by semester
+
+        Cumulative GPA or average
+
+📅 Academic Session & Semester Management
+
+    Admin defines:
+
+        Active semester/year
+
+        Start/end dates
+
+    All grades and course data are grouped accordingly
+
+📎 PDF & Media Handling
+
+    Upload videos and documents per course
+
+    Auto-generate PDFs for:
+
+        Registration slip
+
+        Grade report card
+
+🔒 Access Control
+
+    Page-level restrictions:
+
+        Dashboard (admin only)
+
+        Quiz results (admin/lecturer/custom permission)
+
+    Custom Permissions:
+
+        view_sittings: View other users' quiz results
+
+❓ Quiz System (Advanced)
+
+    Types:
+
+        Multiple Choice
+
+        True/False
+
+        Essay (coming soon)
+
+    Quiz Features:
+
+        One attempt per user (configurable)
+
+        Return to incomplete quiz (for logged-in/session users)
+
+        Question randomization
+
+        Pass marks & custom messages
+
+        Success rate monitoring per category
+
+        Explanation for answers
+
+        View correct answers: immediately or at the end
+
+    Quiz History:
+
+        View past attempts by category
+
+        Track performance progress
+
+    Essay Marking Page:
+
+        View/filter completed quizzes
+
+        Manually grade essays
+
+🧾 PDF Report Generator
+
+    Registration slip (course list, semester info)
+
+    Grade sheet (with breakdown, remarks, GPA)
