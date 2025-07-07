@@ -46,7 +46,7 @@ export default function Dashboard() {
         variant: "destructive",
       })
       setTimeout(() => {
-        window.location.href = "/"
+        window.location.href = "/news-events"
       }, 500)
       return
     }
@@ -54,17 +54,17 @@ export default function Dashboard() {
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["/api/dashboard/metrics"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && user?.role === "admin",
   })
 
   const { data: gradeDistribution } = useQuery({
     queryKey: ["/api/dashboard/grade-distribution"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && user?.role === "admin",
   })
 
   const { data: topCourses } = useQuery({
     queryKey: ["/api/dashboard/top-courses"],
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && user?.role === "admin",
   })
 
   const { data: activeSessions } = useQuery({

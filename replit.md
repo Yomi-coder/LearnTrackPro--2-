@@ -91,6 +91,16 @@ The application follows a monorepo structure with clear separation between front
 ```
 Changelog:
 - July 07, 2025. Initial setup
+- July 07, 2025. Implemented comprehensive LMS features:
+  * Admin-only dashboard with role-based access control
+  * Enhanced grade calculation with pass/fail/pass with warning logic
+  * Student-specific assessment and grade report pages  
+  * User management with CRUD operations for admins
+  * PDF generation endpoints for registration slips and grade reports
+  * Course materials upload functionality
+  * Enhanced quiz system with attempt tracking and randomization
+  * Role-based navigation and page access restrictions
+  * Fixed database schema issues and access control bugs
 ```
 
 ## User Preferences
