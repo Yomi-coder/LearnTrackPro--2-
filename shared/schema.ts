@@ -36,6 +36,7 @@ export const users = pgTable("users", {
   role: varchar("role", { enum: ["admin", "lecturer", "student", "guest"] }).notNull().default("student"),
   department: varchar("department"),
   studentId: varchar("student_id"),
+  permissions: jsonb("permissions").default("[]"), // Custom permissions like "view_sittings"
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

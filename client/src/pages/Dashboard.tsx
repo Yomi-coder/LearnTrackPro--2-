@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const { toast } = useToast()
 
-  // Redirect to home if not authenticated
+  // Redirect to home if not authenticated or not admin
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
@@ -38,7 +38,19 @@ export default function Dashboard() {
       }, 500)
       return
     }
-  }, [isAuthenticated, isLoading, toast])
+    
+    if (!isLoading && isAuthenticated && user?.role !== "admin") {
+      toast({
+        title: "Access Denied",
+        description: "Dashboard is restricted to administrators only.",
+        variant: "destructive",
+      })
+      setTimeout(() => {
+        window.location.href = "/"
+      }, 500)
+      return
+    }
+  }, [isAuthenticated, isLoading, user?.role, toast])
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["/api/dashboard/metrics"],
@@ -60,12 +72,12 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   })
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated || user?.role !== "admin") {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading dashboard...</p>
+          <p>{user?.role !== "admin" ? "Access denied..." : "Loading dashboard..."}</p>
         </div>
       </div>
     )

@@ -58,7 +58,6 @@ const lecturerMenuItems = [
   {
     title: "Main",
     items: [
-      { title: "Dashboard", href: "/", icon: BarChart3 },
       { title: "News & Events", href: "/news-events", icon: Newspaper },
     ]
   },
@@ -67,6 +66,7 @@ const lecturerMenuItems = [
     items: [
       { title: "My Courses", href: "/courses", icon: BookOpen },
       { title: "Assessments", href: "/assessments", icon: ClipboardCheck },
+      { title: "Grade Reports", href: "/grade-reports", icon: PieChart },
       { title: "Quiz System", href: "/quiz-system", icon: MessageCircleQuestion },
     ]
   }
@@ -76,7 +76,6 @@ const studentMenuItems = [
   {
     title: "Main",
     items: [
-      { title: "Dashboard", href: "/", icon: BarChart3 },
       { title: "News & Events", href: "/news-events", icon: Newspaper },
     ]
   },
@@ -84,7 +83,8 @@ const studentMenuItems = [
     title: "Learning",
     items: [
       { title: "My Courses", href: "/courses", icon: BookOpen },
-      { title: "My Grades", href: "/grade-reports", icon: PieChart },
+      { title: "My Assessments", href: "/my-assessments", icon: ClipboardCheck },
+      { title: "My Grades", href: "/my-grades", icon: PieChart },
       { title: "Quizzes", href: "/quiz-system", icon: MessageCircleQuestion },
     ]
   }

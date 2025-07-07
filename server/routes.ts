@@ -10,7 +10,23 @@ import {
   insertQuizSchema,
   insertQuizQuestionSchema,
   insertAcademicSessionSchema,
+  insertUserSchema,
 } from "@shared/schema";
+
+// Helper function to calculate GPA
+function calculateGPA(assessments: any[]): number {
+  if (!assessments || assessments.length === 0) return 0;
+  
+  const gradePoints: { [key: string]: number } = {
+    'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'F': 0.0
+  };
+  
+  const total = assessments.reduce((sum, assessment) => {
+    return sum + (gradePoints[assessment.grade] || 0);
+  }, 0);
+  
+  return total / assessments.length;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -28,8 +44,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard routes
-  app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
+  // Admin-only middleware
+  const adminOnly = async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      next();
+    } catch (error) {
+      res.status(500).json({ message: "Authorization check failed" });
+    }
+  };
+
+  // Dashboard routes (admin only)
+  app.get("/api/dashboard/metrics", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
       const metrics = await storage.getDashboardMetrics();
       res.json(metrics);
@@ -39,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard/grade-distribution", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/grade-distribution", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
       const distribution = await storage.getGradeDistribution();
       res.json(distribution);
@@ -49,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/dashboard/top-courses", isAuthenticated, async (req: any, res) => {
+  app.get("/api/dashboard/top-courses", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
       const topCourses = await storage.getTopPerformingCourses();
       res.json(topCourses);
@@ -358,6 +388,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching course materials:", error);
       res.status(500).json({ message: "Failed to fetch course materials" });
+    }
+  });
+
+  app.post("/api/courses/:id/materials", isAuthenticated, async (req: any, res) => {
+    try {
+      const materialData = {
+        ...req.body,
+        courseId: parseInt(req.params.id),
+        uploadedBy: req.user.claims.sub,
+      };
+      const material = await storage.createCourseMaterial(materialData);
+      res.json(material);
+    } catch (error) {
+      console.error("Error creating course material:", error);
+      res.status(500).json({ message: "Failed to create course material" });
+    }
+  });
+
+  // User management routes (admin only)
+  app.get("/api/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", isAuthenticated, adminOnly, async (req: any, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(userData);
+      res.json(user);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/users/:id", isAuthenticated, adminOnly, async (req: any, res) => {
+    try {
+      const userData = insertUserSchema.partial().parse(req.body);
+      const user = await storage.updateUser(req.params.id, userData);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", isAuthenticated, adminOnly, async (req: any, res) => {
+    try {
+      await storage.deleteUser(req.params.id);
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // PDF Generation routes
+  app.get("/api/students/:id/registration-slip", isAuthenticated, async (req: any, res) => {
+    try {
+      const studentId = req.params.id;
+      const enrollments = await storage.getEnrollments(studentId);
+      
+      // Generate PDF data structure for registration slip
+      const pdfData = {
+        student: await storage.getUser(studentId),
+        enrollments,
+        generatedAt: new Date().toISOString(),
+      };
+      
+      res.json(pdfData);
+    } catch (error) {
+      console.error("Error generating registration slip:", error);
+      res.status(500).json({ message: "Failed to generate registration slip" });
+    }
+  });
+
+  app.get("/api/students/:id/grade-report", isAuthenticated, async (req: any, res) => {
+    try {
+      const studentId = req.params.id;
+      const assessments = await storage.getAssessments(studentId);
+      
+      // Generate PDF data structure for grade report
+      const pdfData = {
+        student: await storage.getUser(studentId),
+        assessments,
+        gpa: calculateGPA(assessments),
+        generatedAt: new Date().toISOString(),
+      };
+      
+      res.json(pdfData);
+    } catch (error) {
+      console.error("Error generating grade report:", error);
+      res.status(500).json({ message: "Failed to generate grade report" });
     }
   });
 

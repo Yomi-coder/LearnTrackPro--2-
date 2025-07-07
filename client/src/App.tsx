@@ -16,6 +16,8 @@ import Assessments from "@/pages/Assessments";
 import QuizSystem from "@/pages/QuizSystem";
 import GradeReports from "@/pages/GradeReports";
 import Settings from "@/pages/Settings";
+import StudentAssessments from "@/pages/StudentAssessments";
+import StudentGrades from "@/pages/StudentGrades";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -55,6 +57,8 @@ function Router() {
         <Route path="/assessments" component={Assessments} />
         <Route path="/quiz-system" component={QuizSystem} />
         <Route path="/grade-reports" component={GradeReports} />
+        <Route path="/my-assessments" component={StudentAssessments} />
+        <Route path="/my-grades" component={StudentGrades} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

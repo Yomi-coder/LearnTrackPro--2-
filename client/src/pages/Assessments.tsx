@@ -152,7 +152,14 @@ export default function Assessments() {
       (parseFloat(data.assignment?.toString() || "0") * 0.2)
     
     const grade = total >= 90 ? "A" : total >= 80 ? "B" : total >= 70 ? "C" : total >= 60 ? "D" : "F"
-    const gradeComment = total >= 60 ? "Pass" : "Fail"
+    
+    // Enhanced grade comments with pass with warning
+    let gradeComment = "Fail"
+    if (total >= 70) {
+      gradeComment = "Pass"
+    } else if (total >= 60) {
+      gradeComment = "Pass with Warning"
+    }
     
     createAssessmentMutation.mutate({
       ...data,
