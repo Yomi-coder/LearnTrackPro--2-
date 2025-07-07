@@ -20,7 +20,10 @@ export default function Landing() {
           </p>
           <Button 
             size="lg" 
-            onClick={() => window.location.href = "/api/login"}
+            onClick={() => {
+              console.log("Login button clicked - redirecting to /api/login")
+              window.location.href = "/api/login"
+            }}
             className="bg-primary hover:bg-primary/90"
           >
             Sign In to Continue

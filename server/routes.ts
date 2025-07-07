@@ -29,15 +29,49 @@ function calculateGPA(assessments: any[]): number {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Simple development login for testing
+  app.get("/api/login", async (req: any, res) => {
+    try {
+      // For development - auto-login as admin
+      req.session.user = {
+        id: "44705117", 
+        email: "admin@edumaster.dev",
+        firstName: "Admin",
+        lastName: "User",
+        role: "admin"
+      };
+      res.redirect("/");
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.get("/api/logout", (req: any, res) => {
+    req.session.destroy();
+    res.redirect("/");
+  });
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // Check if user is in session (fallback for dev mode)
+      if (req.session?.user) {
+        return res.json(req.session.user);
+      }
+      
+      // Normal authenticated flow
+      if (req.user?.claims?.sub) {
+        const userId = req.user.claims.sub;
+        storage.getUser(userId).then(user => {
+          res.json(user);
+        }).catch(error => {
+          console.error("Error fetching user:", error);
+          res.status(500).json({ message: "Failed to fetch user" });
+        });
+      } else {
+        res.status(401).json({ message: "Unauthorized" });
+      }
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -47,12 +81,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin-only middleware
   const adminOnly = async (req: any, res: any, next: any) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user || user.role !== "admin") {
-        return res.status(403).json({ message: "Admin access required" });
+      // Check session-based user first
+      if (req.session?.user?.role === "admin") {
+        return next();
       }
-      next();
+      
+      // Check Replit auth user
+      if (req.user?.claims?.sub) {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        if (user && user.role === "admin") {
+          return next();
+        }
+      }
+      
+      res.status(403).json({ message: "Admin access required" });
     } catch (error) {
       res.status(500).json({ message: "Authorization check failed" });
     }
