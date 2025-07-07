@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(250, 20%, 99%);
+  --foreground: hsl(212, 14%, 14%);
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(212, 14%, 14%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(212, 14%, 14%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(142, 71%, 45%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(212, 14%, 14%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(212, 14%, 14%);
+  --radius: 0.5rem;
+  --surface: hsl(0, 0%, 100%);
+}
+
+.dark {
+  --background: hsl(212, 24%, 6%);
+  --foreground: hsl(210, 40%, 98%);
+  --muted: hsl(217, 33%, 17%);
+  --muted-foreground: hsl(215, 20%, 65%);
+  --popover: hsl(212, 24%, 6%);
+  --popover-foreground: hsl(210, 40%, 98%);
+  --card: hsl(212, 24%, 6%);
+  --card-foreground: hsl(210, 40%, 98%);
+  --border: hsl(217, 33%, 17%);
+  --input: hsl(217, 33%, 17%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(142, 71%, 45%);
+  --secondary-foreground: hsl(210, 40%, 98%);
+  --accent: hsl(217, 33%, 17%);
+  --accent-foreground: hsl(210, 40%, 98%);
+  --destructive: hsl(0, 63%, 31%);
+  --destructive-foreground: hsl(210, 40%, 98%);
+  --ring: hsl(212, 72%, 59%);
+  --surface: hsl(212, 24%, 6%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom styles for educational theme */
+.bg-surface {
+  background-color: var(--surface);
+}
+
+/* Ensure proper contrast for buttons and interactive elements */
+.btn-primary {
+  background-color: hsl(207, 90%, 54%);
+  color: hsl(210, 40%, 98%);
+}
+
+.btn-secondary {
+  background-color: hsl(142, 71%, 45%);
+  color: hsl(210, 40%, 98%);
+}
+
+/* Educational color palette for badges and status indicators */
+.status-active {
+  background-color: hsl(142, 71%, 45%);
+  color: hsl(210, 40%, 98%);
+}
+
+.status-inactive {
+  background-color: hsl(215, 16%, 47%);
+  color: hsl(210, 40%, 98%);
+}
+
+.grade-a {
+  background-color: hsl(142, 71%, 45%);
+  color: hsl(210, 40%, 98%);
+}
+
+.grade-b {
+  background-color: hsl(207, 90%, 54%);
+  color: hsl(210, 40%, 98%);
+}
+
+.grade-c {
+  background-color: hsl(45, 93%, 47%);
+  color: hsl(212, 14%, 14%);
+}
+
+.grade-d {
+  background-color: hsl(25, 95%, 53%);
+  color: hsl(210, 40%, 98%);
+}
+
+.grade-f {
+  background-color: hsl(0, 84%, 60%);
+  color: hsl(210, 40%, 98%);
+}
