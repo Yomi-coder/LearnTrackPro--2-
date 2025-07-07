@@ -18,6 +18,8 @@ import GradeReports from "@/pages/GradeReports";
 import Settings from "@/pages/Settings";
 import StudentAssessments from "@/pages/StudentAssessments";
 import StudentGrades from "@/pages/StudentGrades";
+import SignUp from "@/pages/SignUp";
+import SignIn from "@/pages/SignIn";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -39,6 +41,8 @@ function Router() {
     return (
       <Switch>
         <Route path="/" component={Landing} />
+        <Route path="/signup" component={SignUp} />
+        <Route path="/signin" component={SignIn} />
         <Route component={Landing} />
       </Switch>
     );

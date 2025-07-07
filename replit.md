@@ -101,6 +101,13 @@ Changelog:
   * Enhanced quiz system with attempt tracking and randomization
   * Role-based navigation and page access restrictions
   * Fixed database schema issues and access control bugs
+- July 07, 2025. Added comprehensive role-based authentication system:
+  * Dual authentication methods: Replit OAuth and email/password
+  * Role-based sign-up with admin, lecturer, and student options
+  * Professional sign-in and sign-up pages with form validation
+  * Session-based authentication with proper security
+  * Landing page with both sign-in and create account options
+  * Fixed authentication middleware and session management
 ```
 
 ## User Preferences

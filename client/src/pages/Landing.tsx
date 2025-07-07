@@ -18,16 +18,23 @@ export default function Landing() {
             A comprehensive Learning Management System designed to streamline education 
             with course management, assessment tracking, and administrative tools.
           </p>
-          <Button 
-            size="lg" 
-            onClick={() => {
-              console.log("Login button clicked - redirecting to /api/login")
-              window.location.href = "/api/login"
-            }}
-            className="bg-primary hover:bg-primary/90"
-          >
-            Sign In to Continue
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              onClick={() => window.location.href = "/signin"}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Sign In
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline"
+              onClick={() => window.location.href = "/signup"}
+              className="border-primary text-primary hover:bg-primary hover:text-white"
+            >
+              Create Account
+            </Button>
+          </div>
         </div>
 
         {/* Features Grid */}

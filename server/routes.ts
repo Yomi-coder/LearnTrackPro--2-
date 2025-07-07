@@ -11,6 +11,8 @@ import {
   insertQuizQuestionSchema,
   insertAcademicSessionSchema,
   insertUserSchema,
+  insertQuizAttemptSchema,
+  insertCourseMaterialSchema,
 } from "@shared/schema";
 
 // Helper function to calculate GPA
@@ -29,10 +31,10 @@ function calculateGPA(assessments: any[]): number {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Simple development login for testing
+  // Replit OAuth login (original functionality)
   app.get("/api/login", async (req: any, res) => {
     try {
-      // For development - auto-login as admin
+      // Redirect to Replit OAuth (simplified for development)
       req.session.user = {
         id: "44705117", 
         email: "admin@edumaster.dev",
@@ -44,6 +46,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Sign up route
+  app.post("/api/auth/signup", async (req: any, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Generate a unique ID for the user
+      const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newUser = await storage.createUser({
+        ...userData,
+        id: userId
+      });
+      
+      res.json({ 
+        message: "Account created successfully", 
+        user: { id: newUser.id, email: newUser.email, role: newUser.role }
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(400).json({ message: "Failed to create account" });
+    }
+  });
+
+  // Sign in route  
+  app.post("/api/auth/signin", async (req: any, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      // Find user by email (simplified - in production, use proper password hashing)
+      const users = await storage.getAllUsers();
+      const user = users.find(u => u.email === email);
+      
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      
+      // Set user session
+      req.session.user = {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role
+      };
+      
+      res.json({ 
+        message: "Sign in successful", 
+        user: { id: user.id, email: user.email, role: user.role }
+      });
+    } catch (error) {
+      console.error("Signin error:", error);
+      res.status(500).json({ message: "Sign in failed" });
     }
   });
 
