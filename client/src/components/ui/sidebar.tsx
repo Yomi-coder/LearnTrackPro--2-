@@ -58,6 +58,7 @@ const lecturerMenuItems = [
   {
     title: "Main",
     items: [
+      { title: "Dashboard", href: "/", icon: BarChart3 },
       { title: "News & Events", href: "/news-events", icon: Newspaper },
     ]
   },
@@ -76,6 +77,7 @@ const studentMenuItems = [
   {
     title: "Main",
     items: [
+      { title: "Dashboard", href: "/", icon: BarChart3 },
       { title: "News & Events", href: "/news-events", icon: Newspaper },
     ]
   },

@@ -25,7 +25,7 @@ export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const { toast } = useToast()
 
-  // Redirect to home if not authenticated or not admin
+  // Redirect if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       toast({
@@ -35,18 +35,6 @@ export default function Dashboard() {
       })
       setTimeout(() => {
         window.location.href = "/api/login"
-      }, 500)
-      return
-    }
-    
-    if (!isLoading && isAuthenticated && user?.role !== "admin") {
-      toast({
-        title: "Access Denied",
-        description: "Dashboard is restricted to administrators only.",
-        variant: "destructive",
-      })
-      setTimeout(() => {
-        window.location.href = "/news-events"
       }, 500)
       return
     }
@@ -72,12 +60,12 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   })
 
-  if (isLoading || !isAuthenticated || user?.role !== "admin") {
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>{user?.role !== "admin" ? "Access denied..." : "Loading dashboard..."}</p>
+          <p>Loading dashboard...</p>
         </div>
       </div>
     )
@@ -113,7 +101,9 @@ export default function Dashboard() {
            'Student Dashboard'}
         </h1>
         <p className="text-muted-foreground">
-          Overview of your learning management system
+          {user?.role === 'admin' ? 'Overview of your learning management system' :
+           user?.role === 'lecturer' ? 'Manage your courses and track student progress' :
+           'Track your academic progress and upcoming assignments'}
         </p>
         
         {/* Active Semester Banner */}

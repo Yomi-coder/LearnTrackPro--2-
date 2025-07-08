@@ -16,6 +16,7 @@ import Assessments from "@/pages/Assessments";
 import QuizSystem from "@/pages/QuizSystem";
 import GradeReports from "@/pages/GradeReports";
 import Settings from "@/pages/Settings";
+import AcademicSessions from "@/pages/AcademicSessions";
 import StudentAssessments from "@/pages/StudentAssessments";
 import StudentGrades from "@/pages/StudentGrades";
 import SignUp from "@/pages/SignUp";
@@ -56,7 +57,7 @@ function Router() {
         <Route path="/students" component={Students} />
         <Route path="/lecturers" component={Lecturers} />
         <Route path="/courses" component={Courses} />
-        <Route path="/sessions" component={Settings} />
+        <Route path="/sessions" component={AcademicSessions} />
         <Route path="/news-events" component={NewsEvents} />
         <Route path="/assessments" component={Assessments} />
         <Route path="/quiz-system" component={QuizSystem} />
