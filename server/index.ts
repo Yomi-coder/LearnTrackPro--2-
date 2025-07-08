@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
+import passport from "passport";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -14,6 +15,19 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
 }));
+
+// Initialize Passport.js
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Basic passport setup for session-based auth
+passport.serializeUser((user: any, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user: any, done) => {
+  done(null, user);
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
