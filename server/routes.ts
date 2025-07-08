@@ -54,6 +54,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       
+      // Check if email already exists
+      const users = await storage.getAllUsers();
+      const existingUser = users.find(u => u.email === userData.email);
+      
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: "An account with this email already exists. Please use a different email or sign in instead." 
+        });
+      }
+      
       // Generate a unique ID for the user
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const newUser = await storage.createUser({
@@ -67,7 +77,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Signup error:", error);
-      res.status(400).json({ message: "Failed to create account" });
+      
+      // Handle Zod validation errors
+      if (error.name === 'ZodError') {
+        const firstError = error.errors[0];
+        if (firstError.path.includes('role')) {
+          return res.status(400).json({ 
+            message: "Invalid role selected. Please choose Admin, Lecturer, or Student." 
+          });
+        }
+        return res.status(400).json({ 
+          message: `Validation error: ${firstError.message}` 
+        });
+      }
+      
+      // Handle specific database constraint errors
+      if (error.code === '23505' && error.constraint === 'users_email_unique') {
+        return res.status(400).json({ 
+          message: "An account with this email already exists. Please use a different email or sign in instead." 
+        });
+      }
+      
+      res.status(400).json({ message: "Failed to create account. Please try again." });
     }
   });
 

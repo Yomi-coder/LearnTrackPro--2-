@@ -42,11 +42,21 @@ export default function SignUp() {
       window.location.href = "/signin"
     },
     onError: (error: any) => {
+      const errorMessage = error.message || "Failed to create account";
       toast({
         title: "Sign Up Failed",
-        description: error.message || "Failed to create account",
+        description: errorMessage,
         variant: "destructive",
       })
+      
+      // If email already exists, focus on email field
+      if (errorMessage.includes("email already exists")) {
+        form.setFocus("email");
+        form.setError("email", { 
+          type: "manual", 
+          message: "This email is already registered" 
+        });
+      }
     },
   })
 
