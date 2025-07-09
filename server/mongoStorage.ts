@@ -112,6 +112,31 @@ export class MongoStorage implements IMongoStorage {
     return this.convertUser(user);
   }
 
+  async createAdminUser(): Promise<UserType> {
+    const adminEmail = 'admin@edumaster.com';
+    const adminPassword = 'admin123';
+    
+    // Check if admin already exists
+    const existingAdmin = await this.getUserByEmail(adminEmail);
+    if (existingAdmin) {
+      return existingAdmin;
+    }
+
+    // Create admin user
+    const hashedPassword = await import('bcryptjs').then(bcrypt => bcrypt.hash(adminPassword, 12));
+    const adminUser = new User({
+      id: 'admin_edumaster_001',
+      email: adminEmail,
+      password: hashedPassword,
+      role: 'admin',
+      firstName: 'System',
+      lastName: 'Administrator',
+    });
+    
+    await adminUser.save();
+    return this.convertUser(adminUser);
+  }
+
   async updateUser(id: string, userData: Partial<InsertUser>): Promise<UserType> {
     const user = await User.findOneAndUpdate({ id }, userData, { new: true });
     if (!user) throw new Error('User not found');

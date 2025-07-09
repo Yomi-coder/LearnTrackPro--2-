@@ -54,6 +54,11 @@ app.use((req, res, next) => {
   // Connect to MongoDB
   await connectDB();
   
+  // Create admin user if it doesn't exist
+  const { mongoStorage } = await import('./mongoStorage');
+  await mongoStorage.createAdminUser();
+  console.log('Admin user ensured: admin@edumaster.com');
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

@@ -25,9 +25,19 @@ export function setupAuth(app: Express) {
 
   app.use(session(sessionSettings));
 
-  // Register endpoint
-  app.post('/api/auth/signup', async (req, res) => {
+  // Admin-only user creation endpoint
+  app.post('/api/auth/create-user', async (req, res) => {
     try {
+      // Check if user is admin
+      if (!req.session.userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const currentUser = await mongoStorage.getUser(req.session.userId);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return res.status(403).json({ message: 'Only administrators can create user accounts' });
+      }
+
       const { email, password, role, ...userData } = req.body;
 
       // Check if user exists
@@ -47,16 +57,12 @@ export function setupAuth(app: Express) {
         ...userData,
       });
 
-      // Set session
-      req.session.userId = newUser.id;
-      req.session.user = newUser;
-
       res.status(201).json({
-        message: 'Account created successfully',
+        message: 'User account created successfully',
         user: { ...newUser, password: undefined },
       });
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Create user error:', error);
       res.status(500).json({ message: 'Internal server error' });
     }
   });
