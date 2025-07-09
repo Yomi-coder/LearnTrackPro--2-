@@ -1,8 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
-import passport from "passport";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import connectDB from "./mongodb";
+import { setupAuth } from "./auth";
 
 const app = express();
 app.use(express.json());
@@ -16,18 +17,8 @@ app.use(session({
   cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 } // 24 hours
 }));
 
-// Initialize Passport.js
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Basic passport setup for session-based auth
-passport.serializeUser((user: any, done) => {
-  done(null, user);
-});
-
-passport.deserializeUser((user: any, done) => {
-  done(null, user);
-});
+// Setup authentication
+setupAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -60,6 +51,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Connect to MongoDB
+  await connectDB();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

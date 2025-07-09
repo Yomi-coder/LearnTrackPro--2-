@@ -10,8 +10,8 @@ The application follows a monorepo structure with clear separation between front
 
 - **Frontend**: React + TypeScript client with Vite build system
 - **Backend**: Express.js REST API server with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Replit Auth with session-based authentication
+- **Database**: MongoDB Atlas with Mongoose ODM
+- **Authentication**: REST API authentication with bcrypt and session-based authentication
 - **UI Framework**: shadcn/ui components with Tailwind CSS
 - **State Management**: TanStack Query for server state management
 
@@ -27,8 +27,8 @@ The application follows a monorepo structure with clear separation between front
 
 ### Backend Architecture
 - **API Layer**: Express.js with TypeScript
-- **Database Layer**: Drizzle ORM with PostgreSQL
-- **Authentication**: Replit Auth with express-session
+- **Database Layer**: Mongoose ODM with MongoDB Atlas
+- **Authentication**: REST API authentication with bcrypt password hashing and express-session
 - **Validation**: Zod schemas for request/response validation
 - **Error Handling**: Centralized error middleware
 
@@ -44,7 +44,7 @@ The application follows a monorepo structure with clear separation between front
 
 ## Data Flow
 
-1. **Authentication Flow**: Users authenticate via Replit Auth, sessions stored in PostgreSQL
+1. **Authentication Flow**: Users authenticate via REST API with email/password, sessions stored in memory
 2. **API Communication**: Frontend makes REST API calls with credentials included
 3. **Data Fetching**: TanStack Query manages server state with automatic caching
 4. **Form Submission**: React Hook Form validates data before API submission
@@ -53,8 +53,8 @@ The application follows a monorepo structure with clear separation between front
 ## External Dependencies
 
 ### Core Dependencies
-- **@neondatabase/serverless**: PostgreSQL database connection
-- **drizzle-orm**: Type-safe database ORM
+- **mongoose**: MongoDB object modeling and connection
+- **bcryptjs**: Password hashing for secure authentication
 - **@tanstack/react-query**: Server state management
 - **@radix-ui/***: Accessible UI component primitives
 - **react-hook-form**: Form state management
@@ -82,9 +82,9 @@ The application follows a monorepo structure with clear separation between front
 - **Session Storage**: PostgreSQL-backed sessions for scalability
 
 ### Database Considerations
-- Application uses Drizzle ORM configured for PostgreSQL dialect
-- Schema migrations managed through Drizzle Kit
-- Connection pooling via Neon serverless driver for production scaling
+- Application uses Mongoose ODM configured for MongoDB Atlas
+- Schema management handled through Mongoose models
+- Connection pooling via MongoDB native driver for production scaling
 
 ## Changelog
 
@@ -108,6 +108,14 @@ Changelog:
   * Session-based authentication with proper security
   * Landing page with both sign-in and create account options
   * Fixed authentication middleware and session management
+- July 09, 2025. Migrated from PostgreSQL to MongoDB Atlas:
+  * Removed Replit authentication and replaced with REST API authentication
+  * Implemented MongoDB Atlas connection with Mongoose
+  * Created secure password hashing with bcrypt
+  * Updated authentication endpoints (/api/auth/signup, /api/auth/signin, /api/auth/logout, /api/auth/user)
+  * Migrated storage layer to MongoDB with proper user models
+  * Maintained role-based access control for admin, lecturer, and student users
+  * Successfully tested authentication system with MongoDB Atlas
 ```
 
 ## User Preferences

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { mongoStorage } from "./mongoStorage";
+import { isAuthenticated, requireRole } from "./auth";
 import {
   insertCourseSchema,
   insertEnrollmentSchema,
@@ -31,32 +31,13 @@ function calculateGPA(assessments: any[]): number {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Replit OAuth login (original functionality)
-  app.get("/api/login", async (req: any, res) => {
-    try {
-      // Redirect to Replit OAuth (simplified for development)
-      req.session.user = {
-        id: "44705117", 
-        email: "admin@edumaster.dev",
-        firstName: "Admin",
-        lastName: "User",
-        role: "admin"
-      };
-      res.redirect("/");
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
-
   // Sign up route
   app.post("/api/auth/signup", async (req: any, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
       
       // Check if email already exists
-      const users = await storage.getAllUsers();
-      const existingUser = users.find(u => u.email === userData.email);
+      const existingUser = await mongoStorage.getUserByEmail(userData.email);
       
       if (existingUser) {
         return res.status(400).json({ 
@@ -66,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate a unique ID for the user
       const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const newUser = await storage.createUser({
+      const newUser = await mongoStorage.createUser({
         ...userData,
         id: userId
       });
@@ -102,43 +83,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sign in route  
-  app.post("/api/auth/signin", async (req: any, res) => {
-    try {
-      const { email, password } = req.body;
-      
-      // Find user by email (simplified - in production, use proper password hashing)
-      const users = await storage.getAllUsers();
-      const user = users.find(u => u.email === email);
-      
-      if (!user) {
-        return res.status(401).json({ message: "Invalid email or password" });
-      }
-      
-      // Set user session
-      req.session.user = {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role
-      };
-      
-      res.json({ 
-        message: "Sign in successful", 
-        user: { id: user.id, email: user.email, role: user.role }
-      });
-    } catch (error) {
-      console.error("Signin error:", error);
-      res.status(500).json({ message: "Sign in failed" });
-    }
-  });
-
-  app.get("/api/logout", (req: any, res) => {
-    req.session.destroy();
-    res.redirect("/");
-  });
-
   // Auth routes
   app.get('/api/auth/user', (req: any, res) => {
     try {
@@ -147,18 +91,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(req.session.user);
       }
       
-      // Normal authenticated flow
-      if (req.user?.claims?.sub) {
-        const userId = req.user.claims.sub;
-        storage.getUser(userId).then(user => {
-          res.json(user);
-        }).catch(error => {
-          console.error("Error fetching user:", error);
-          res.status(500).json({ message: "Failed to fetch user" });
-        });
-      } else {
-        res.status(401).json({ message: "Unauthorized" });
-      }
+      // If no session, user is unauthorized
+      res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -168,18 +102,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin-only middleware
   const adminOnly = async (req: any, res: any, next: any) => {
     try {
-      // Check session-based user first
+      // Check session-based user
       if (req.session?.user?.role === "admin") {
         return next();
-      }
-      
-      // Check Replit auth user
-      if (req.user?.claims?.sub) {
-        const userId = req.user.claims.sub;
-        const user = await storage.getUser(userId);
-        if (user && user.role === "admin") {
-          return next();
-        }
       }
       
       res.status(403).json({ message: "Admin access required" });
@@ -191,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard routes (admin only)
   app.get("/api/dashboard/metrics", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
-      const metrics = await storage.getDashboardMetrics();
+      const metrics = await mongoStorage.getDashboardMetrics();
       res.json(metrics);
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
@@ -201,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/grade-distribution", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
-      const distribution = await storage.getGradeDistribution();
+      const distribution = await mongoStorage.getGradeDistribution();
       res.json(distribution);
     } catch (error) {
       console.error("Error fetching grade distribution:", error);
@@ -211,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/top-courses", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
-      const topCourses = await storage.getTopPerformingCourses();
+      const topCourses = await mongoStorage.getTopPerformingCourses();
       res.json(topCourses);
     } catch (error) {
       console.error("Error fetching top courses:", error);
@@ -222,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Academic session routes
   app.get("/api/sessions", isAuthenticated, async (req: any, res) => {
     try {
-      const sessions = await storage.getActiveSessions();
+      const sessions = await mongoStorage.getActiveSessions();
       res.json(sessions);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -233,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/sessions", isAuthenticated, async (req: any, res) => {
     try {
       const sessionData = insertAcademicSessionSchema.parse(req.body);
-      const session = await storage.createAcademicSession(sessionData);
+      const session = await mongoStorage.createAcademicSession(sessionData);
       res.json(session);
     } catch (error) {
       console.error("Error creating session:", error);
@@ -245,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/courses", isAuthenticated, async (req: any, res) => {
     try {
       const sessionId = req.query.sessionId ? parseInt(req.query.sessionId) : undefined;
-      const courses = await storage.getCourses(sessionId);
+      const courses = await mongoStorage.getCourses(sessionId);
       res.json(courses);
     } catch (error) {
       console.error("Error fetching courses:", error);
@@ -255,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/courses/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const course = await storage.getCourseById(parseInt(req.params.id));
+      const course = await mongoStorage.getCourseById(parseInt(req.params.id));
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
@@ -269,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/courses", isAuthenticated, async (req: any, res) => {
     try {
       const courseData = insertCourseSchema.parse(req.body);
-      const course = await storage.createCourse(courseData);
+      const course = await mongoStorage.createCourse(courseData);
       res.json(course);
     } catch (error) {
       console.error("Error creating course:", error);
@@ -280,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/courses/:id", isAuthenticated, async (req: any, res) => {
     try {
       const courseData = insertCourseSchema.partial().parse(req.body);
-      const course = await storage.updateCourse(parseInt(req.params.id), courseData);
+      const course = await mongoStorage.updateCourse(parseInt(req.params.id), courseData);
       res.json(course);
     } catch (error) {
       console.error("Error updating course:", error);
@@ -290,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/courses/:id", isAuthenticated, async (req: any, res) => {
     try {
-      await storage.deleteCourse(parseInt(req.params.id));
+      await mongoStorage.deleteCourse(parseInt(req.params.id));
       res.json({ message: "Course deleted successfully" });
     } catch (error) {
       console.error("Error deleting course:", error);
@@ -303,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const studentId = req.query.studentId as string;
       const courseId = req.query.courseId ? parseInt(req.query.courseId) : undefined;
-      const enrollments = await storage.getEnrollments(studentId, courseId);
+      const enrollments = await mongoStorage.getEnrollments(studentId, courseId);
       res.json(enrollments);
     } catch (error) {
       console.error("Error fetching enrollments:", error);
@@ -314,7 +239,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/enrollments", isAuthenticated, async (req: any, res) => {
     try {
       const enrollmentData = insertEnrollmentSchema.parse(req.body);
-      const enrollment = await storage.createEnrollment(enrollmentData);
+      const enrollment = await mongoStorage.createEnrollment(enrollmentData);
       res.json(enrollment);
     } catch (error) {
       console.error("Error creating enrollment:", error);
@@ -325,7 +250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/enrollments", isAuthenticated, async (req: any, res) => {
     try {
       const { studentId, courseId } = req.body;
-      await storage.dropEnrollment(studentId, parseInt(courseId));
+      await mongoStorage.dropEnrollment(studentId, parseInt(courseId));
       res.json({ message: "Enrollment dropped successfully" });
     } catch (error) {
       console.error("Error dropping enrollment:", error);
@@ -338,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const studentId = req.query.studentId as string;
       const courseId = req.query.courseId ? parseInt(req.query.courseId) : undefined;
-      const assessments = await storage.getAssessments(studentId, courseId);
+      const assessments = await mongoStorage.getAssessments(studentId, courseId);
       res.json(assessments);
     } catch (error) {
       console.error("Error fetching assessments:", error);
@@ -349,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/assessments", isAuthenticated, async (req: any, res) => {
     try {
       const assessmentData = insertAssessmentSchema.parse(req.body);
-      const assessment = await storage.createAssessment(assessmentData);
+      const assessment = await mongoStorage.createAssessment(assessmentData);
       res.json(assessment);
     } catch (error) {
       console.error("Error creating assessment:", error);
@@ -360,7 +285,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/assessments/:id", isAuthenticated, async (req: any, res) => {
     try {
       const assessmentData = insertAssessmentSchema.partial().parse(req.body);
-      const assessment = await storage.updateAssessment(parseInt(req.params.id), assessmentData);
+      const assessment = await mongoStorage.updateAssessment(parseInt(req.params.id), assessmentData);
       res.json(assessment);
     } catch (error) {
       console.error("Error updating assessment:", error);
@@ -372,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/news-events", async (req, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-      const newsEvents = await storage.getNewsEvents(limit);
+      const newsEvents = await mongoStorage.getNewsEvents(limit);
       res.json(newsEvents);
     } catch (error) {
       console.error("Error fetching news events:", error);
@@ -383,7 +308,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/news-events", isAuthenticated, async (req: any, res) => {
     try {
       const newsEventData = insertNewsEventSchema.parse(req.body);
-      const newsEvent = await storage.createNewsEvent(newsEventData);
+      const newsEvent = await mongoStorage.createNewsEvent(newsEventData);
       res.json(newsEvent);
     } catch (error) {
       console.error("Error creating news event:", error);
@@ -394,7 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/news-events/:id", isAuthenticated, async (req: any, res) => {
     try {
       const newsEventData = insertNewsEventSchema.partial().parse(req.body);
-      const newsEvent = await storage.updateNewsEvent(parseInt(req.params.id), newsEventData);
+      const newsEvent = await mongoStorage.updateNewsEvent(parseInt(req.params.id), newsEventData);
       res.json(newsEvent);
     } catch (error) {
       console.error("Error updating news event:", error);
@@ -404,7 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/news-events/:id", isAuthenticated, async (req: any, res) => {
     try {
-      await storage.deleteNewsEvent(parseInt(req.params.id));
+      await mongoStorage.deleteNewsEvent(parseInt(req.params.id));
       res.json({ message: "News event deleted successfully" });
     } catch (error) {
       console.error("Error deleting news event:", error);
@@ -416,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/quizzes", isAuthenticated, async (req: any, res) => {
     try {
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId) : undefined;
-      const quizzes = await storage.getQuizzes(categoryId);
+      const quizzes = await mongoStorage.getQuizzes(categoryId);
       res.json(quizzes);
     } catch (error) {
       console.error("Error fetching quizzes:", error);
@@ -426,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/quizzes/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const quiz = await storage.getQuizById(parseInt(req.params.id));
+      const quiz = await mongoStorage.getQuizById(parseInt(req.params.id));
       if (!quiz) {
         return res.status(404).json({ message: "Quiz not found" });
       }
@@ -440,7 +365,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quizzes", isAuthenticated, async (req: any, res) => {
     try {
       const quizData = insertQuizSchema.parse(req.body);
-      const quiz = await storage.createQuiz(quizData);
+      const quiz = await mongoStorage.createQuiz(quizData);
       res.json(quiz);
     } catch (error) {
       console.error("Error creating quiz:", error);
@@ -451,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quiz question routes
   app.get("/api/quizzes/:id/questions", isAuthenticated, async (req: any, res) => {
     try {
-      const questions = await storage.getQuizQuestions(parseInt(req.params.id));
+      const questions = await mongoStorage.getQuizQuestions(parseInt(req.params.id));
       res.json(questions);
     } catch (error) {
       console.error("Error fetching quiz questions:", error);
@@ -465,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         quizId: parseInt(req.params.id),
       });
-      const question = await storage.createQuizQuestion(questionData);
+      const question = await mongoStorage.createQuizQuestion(questionData);
       res.json(question);
     } catch (error) {
       console.error("Error creating quiz question:", error);
@@ -478,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.query.userId as string;
       const quizId = req.query.quizId ? parseInt(req.query.quizId) : undefined;
-      const attempts = await storage.getQuizAttempts(userId, quizId);
+      const attempts = await mongoStorage.getQuizAttempts(userId, quizId);
       res.json(attempts);
     } catch (error) {
       console.error("Error fetching quiz attempts:", error);
@@ -492,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         userId: req.user.claims.sub,
       };
-      const attempt = await storage.createQuizAttempt(attemptData);
+      const attempt = await mongoStorage.createQuizAttempt(attemptData);
       res.json(attempt);
     } catch (error) {
       console.error("Error creating quiz attempt:", error);
@@ -502,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/quiz-attempts/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const attempt = await storage.updateQuizAttempt(parseInt(req.params.id), req.body);
+      const attempt = await mongoStorage.updateQuizAttempt(parseInt(req.params.id), req.body);
       res.json(attempt);
     } catch (error) {
       console.error("Error updating quiz attempt:", error);
@@ -513,7 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Course material routes
   app.get("/api/courses/:id/materials", isAuthenticated, async (req: any, res) => {
     try {
-      const materials = await storage.getCourseMaterials(parseInt(req.params.id));
+      const materials = await mongoStorage.getCourseMaterials(parseInt(req.params.id));
       res.json(materials);
     } catch (error) {
       console.error("Error fetching course materials:", error);
@@ -528,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         courseId: parseInt(req.params.id),
         uploadedBy: req.user.claims.sub,
       };
-      const material = await storage.createCourseMaterial(materialData);
+      const material = await mongoStorage.createCourseMaterial(materialData);
       res.json(material);
     } catch (error) {
       console.error("Error creating course material:", error);
@@ -539,7 +464,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User management routes (admin only)
   app.get("/api/users", isAuthenticated, async (req: any, res) => {
     try {
-      const users = await storage.getAllUsers();
+      const users = await mongoStorage.getAllUsers();
       res.json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -550,7 +475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(userData);
+      const user = await mongoStorage.createUser(userData);
       res.json(user);
     } catch (error) {
       console.error("Error creating user:", error);
@@ -561,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
       const userData = insertUserSchema.partial().parse(req.body);
-      const user = await storage.updateUser(req.params.id, userData);
+      const user = await mongoStorage.updateUser(req.params.id, userData);
       res.json(user);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -571,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/users/:id", isAuthenticated, adminOnly, async (req: any, res) => {
     try {
-      await storage.deleteUser(req.params.id);
+      await mongoStorage.deleteUser(req.params.id);
       res.json({ message: "User deleted successfully" });
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -583,11 +508,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/:id/registration-slip", isAuthenticated, async (req: any, res) => {
     try {
       const studentId = req.params.id;
-      const enrollments = await storage.getEnrollments(studentId);
+      const enrollments = await mongoStorage.getEnrollments(studentId);
       
       // Generate PDF data structure for registration slip
       const pdfData = {
-        student: await storage.getUser(studentId),
+        student: await mongoStorage.getUser(studentId),
         enrollments,
         generatedAt: new Date().toISOString(),
       };
@@ -602,11 +527,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/:id/grade-report", isAuthenticated, async (req: any, res) => {
     try {
       const studentId = req.params.id;
-      const assessments = await storage.getAssessments(studentId);
+      const assessments = await mongoStorage.getAssessments(studentId);
       
       // Generate PDF data structure for grade report
       const pdfData = {
-        student: await storage.getUser(studentId),
+        student: await mongoStorage.getUser(studentId),
         assessments,
         gpa: calculateGPA(assessments),
         generatedAt: new Date().toISOString(),
